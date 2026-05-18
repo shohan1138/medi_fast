@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Boolean, DECIMAL
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Boolean, Numeric
 from sqlalchemy.orm import relationship
 from .database import Base
 import datetime
@@ -150,7 +150,7 @@ class Medicine(Base):
     name = Column(String)
     category = Column(String)
     stock_quantity = Column(Integer)
-    price = Column(DECIMAL(10, 2))
+    price = Column(Numeric(10, 2))
 
 
 class PrescriptionItem(Base):
@@ -174,7 +174,7 @@ class Invoice(Base):
 
     AppointmentId = Column(Integer, ForeignKey("appointments.AppointmentId"))
 
-    total_amount = Column(DECIMAL(10, 2))
+    total_amount = Column(Numeric(10, 2))
     status = Column(String)
     insurance_provider = Column(String)
 
