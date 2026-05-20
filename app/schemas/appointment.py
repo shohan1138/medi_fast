@@ -1,4 +1,4 @@
-from pydentic import BaseModel
+from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 from enum import Enum
@@ -9,7 +9,7 @@ class AppointmentStatus(str,Enum):
     cancelled="cancelled"
     no_show="no_show"
 
-class ApointmentCreate(BaseModel):
+class AppointmentCreate(BaseModel):
     PatientId:int
     DoctorId:int
     appointment_date:datetime

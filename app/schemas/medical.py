@@ -22,7 +22,7 @@ class MedicalRecordResponse(BaseModel):
     treatment_plan:Optional[str]
     visit_notes:Optional[str]
     created_at:datetime
-    model_config={"from_attributes"}
+    model_config={"from_attributes":True}
 
 # lab report
 class LabReportCreate(BaseModel):
