@@ -47,14 +47,27 @@ def login(date:LoginRequest,db: Session=Depends(get_db)):
 def me(current_user=Depends(get_current_user)):
     return current_user
 
-@router.post("/seed-roles",status_code=201)
+@router.post("/seed-roles",status_code=201,dependencies=[Depends(require_admin)])
 def seed_roles(db:Session=Depends(get_db)):
-    for name in ["admin","doctor","patient"]:
-        exists=db.query(models.Role).filter(models.Role.RoleName==name).first()
+    all_roles=[
+        "admin","managment","doctor","nurse","pharmacist","lab_technician","patient"
+    ]
+    created=[]
+    for name in all_roles:
+        exists=db.query(models.Role).filter(
+            models.Role.RoleName==name
+        ).first()
         if not exists:
             db.add(models.Role(RoleName=name))
-    db.commit()
-    return{"msg":"Roles created:admin.doctor,patient"}
+            created.append(name)
+            db.commit
+            return{"msg":"Roles seeded","created":created}
+    # for name in ["admin","doctor","patient"]:
+    #     exists=db.query(models.Role).filter(models.Role.RoleName==name).first()
+    #     if not exists:
+    #         db.add(models.Role(RoleName=name))
+    # db.commit()
+    # return{"msg":"Roles created:admin.doctor,patient"}
 # admin only create new role
 @router.post("/roles",response_model=RoleResponse, status_code=201,
             dependencies=[Depends(require_admin)])
@@ -85,3 +98,64 @@ def delete_role(role_name:str,db:Session=Depends(get_db)):
     db.delete(role)
     db.commit()
     return{"msg":f"Role'{role_name}'deleted"}
+
+# createing supperuser for once then delete following parts:
+
+# @router.post("/create-superuser",status_code=201)
+# def create_speruser(data:UserCreate,db:Session=Depends(get_db)):
+#     if db.query(models.User).filter(models.User.email==data.email).first():
+#         raise HTTPException(status_code=400,detail="email already registered")
+#     role=db.query(models.Role).filter(
+#         models.Role.RoleName=="admin"
+#     ).first()
+#     user=models.User(
+#         username=data.username,
+#         FullName=data.FullName,
+#         email=data.email,
+#         hashed_password=hash_password(data.password),
+#         phone_number=data.phone_number,
+#         is_superuser=True,
+#         is_active=True,
+#     )
+#     if role:
+#         user.roles.append(role)
+#     db.add(user)
+#     db.commit()
+#     db.refresh(user)
+#     return user
+
+
+@router.post("/users/{user_id}/roles/{role_name}",response_model=UserResponse)
+def assign_role(
+    user_id:str,
+    role_name:str,
+    db:Session=Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    user_roles={r.RoleName for r in current_user.roles}
+
+    # each layer can assign role
+    admin_only_roles={"admin","managment"}
+    managment_only_roles={"doctor","nurse","pharmacist","lab_technician","patient"}
+
+    is_admin =current_user.is_superuser or "admin" in user_roles
+    is_managment="managment"in user_roles
+    if role_name in admin_only_roles and not is_admin:
+        raise HTTPException(status_code=403,detail=f"Only admin can assign '{role_name}'role")
+    if role_name in management_roles and not (is_admin or is_management):
+        raise HTTPException(status_code=403, detail="Management or Admin access required")
+
+    user = db.query(models.User).filter(models.User.UserId == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    role = db.query(models.Role).filter(models.Role.RoleName == role_name).first()
+    if not role:
+        raise HTTPException(status_code=404, detail=f"Role '{role_name}' not found")
+
+    if role not in user.roles:
+        user.roles.append(role)
+        db.commit()
+        db.refresh(user)
+
+    return user
