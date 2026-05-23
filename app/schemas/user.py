@@ -1,5 +1,5 @@
 from pydantic import BaseModel,EmailStr
-from typing import Optional, Literal
+from typing import Optional #, Literal
 from datetime import datetime
 
 #Role
@@ -18,7 +18,7 @@ class UserCreate(BaseModel):
     email:EmailStr
     password:str
     phone_number:str
-    role:Literal["patient"]="patient"
+    # role:Literal["patient"]="patient"
 
 class UserUpdate(BaseModel):
     FullName:Optional[str] = None
@@ -38,6 +38,9 @@ class UserResponse(BaseModel):
     roles:list[RoleResponse] =[]
     model_config={"from_attributes":True}
 
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str
 # Login
 class LoginRequest(BaseModel):
     username:str
