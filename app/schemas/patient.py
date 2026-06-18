@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 class patientCreate(BaseModel):
-    UserId:int
+    
     age:int
     blood_type:str
     gender:str

@@ -1,4 +1,4 @@
-from .user import UserCreate,UserUpdate,UserResponse,RoleCreate,RoleResponse
+from .user import UserCreate,UserUpdate,UserResponse,RoleCreate,RoleResponse,ChangePasswordRequest
 from .patient import patientCreate,PatientResponse,PatientUpdate
 from .doctor import DoctorResponse,DoctorCreate,DoctorScheduleCreate,DoctorScheduleResponse,DoctorScheduleUpdate,DoctorUpdate
 from .appointment import AppointmentCreate,AppointmentResponse,AppointmentStatus,AppointmentUpdate

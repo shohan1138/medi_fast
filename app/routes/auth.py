@@ -196,11 +196,13 @@ def update_user(user_id:int,data:UserUpdate,db:Session=Depends(get_db)):
     if not user:
         raise HTTPException(status_code=404,detail="User not found")
     updates=data.model_dump(execlude_none=True)
+
     if not updates:
         raise HTTPException(status_code=400,detail="No fields provided to update")
     
-    for field,value in updates.items():
-        setattr(user,field,value)
+    db.query(models.User).filter(
+        models.User.UserId==user_id
+    ).update(updates)
     db.commit()
     db.refresh(user)
     return user

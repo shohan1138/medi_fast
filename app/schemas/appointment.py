@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional,Literal
 from datetime import datetime
 from enum import Enum
 
@@ -10,7 +10,7 @@ class AppointmentStatus(str,Enum):
     no_show="no_show"
 
 class AppointmentCreate(BaseModel):
-    PatientId:int
+    # PatientId:int
     DoctorId:int
     appointment_date:datetime
     notes:Optional[str]=None

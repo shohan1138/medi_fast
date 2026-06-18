@@ -3,7 +3,6 @@ from typing import Optional
 
 # Doctor
 class DoctorCreate(BaseModel):
-    UserId:int
     specialty:str
     license_number:str
 
@@ -17,10 +16,9 @@ class DoctorResponse(BaseModel):
     specialty:str
     license_number:str
     model_config={"from_attributes":True}
-# doctoe schedule
 
+# doctor schedule:
 class DoctorScheduleCreate(BaseModel):
-    DoctorId:int
     day_of_week:str
     start_time:str
     end_time:str
@@ -36,4 +34,5 @@ class DoctorScheduleResponse(BaseModel):
     day_of_week:str
     start_time:str
     end_time:str
+    
     model_config={"from_attributes":True}
