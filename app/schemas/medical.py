@@ -8,7 +8,7 @@ class MedicalRecordCreate(BaseModel):
     AppointmentId:int
     diagnosis:str
     treatment_plan:Optional[str]=None
-    visit_nodes:Optional[str]=None
+    visit_notes:Optional[str]=None
 
 class MedicalRecordUpdate(BaseModel):
     diagnosis:Optional[str]=None
@@ -17,7 +17,7 @@ class MedicalRecordUpdate(BaseModel):
 
 class MedicalRecordResponse(BaseModel):
     RecordId:int
-    AppoitmentId:int
+    AppointmentId:int
     diagnosis:str
     treatment_plan:Optional[str]
     visit_notes:Optional[str]
@@ -41,7 +41,7 @@ class LabReportResponse(BaseModel):
     AppointmentId:int
     test_name:str
     result:str
-    norml_range:Optional[str]
+    normal_range:Optional[str]
     is_abnormal:bool
     created_at:datetime
 
