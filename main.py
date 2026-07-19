@@ -4,6 +4,7 @@ from app.database import engine, Base
 import app.models.models
 from app.routes import auth, patient,doctor,appointment
 from app.routes.medical import medical_router,lab_router
+from app.routes.prescription import prescription_router
 
 app = FastAPI(
     title="MediFast API",
@@ -19,6 +20,8 @@ app.include_router(doctor.router)
 app.include_router(appointment.router)
 app.include_router(medical_router)
 app.include_router(lab_router)
+app.include_router(medical_router)
+app.include_router(prescription_router)
 
 
 @app.get("/")

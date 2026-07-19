@@ -4,6 +4,7 @@ from app.utility.deps import get_current_user,get_db,require_admin
 from app.utility.auth import hash_password,verify_password,create_access_token
 from app.schemas.user import UserCreate,UserResponse,LoginRequest,TokenResponse,RoleCreate,RoleResponse,ChangePasswordRequest,UserUpdate
 from app.models import models
+from fastapi.security import OAuth2PasswordRequestForm
 
 router=APIRouter(prefix="/auth",tags=["Auth"])
 
@@ -35,7 +36,8 @@ def register(data:UserCreate,db:Session=Depends(get_db)):
     return user
 
 @router.post("/login",response_model=TokenResponse)
-def login(date:LoginRequest,db: Session=Depends(get_db)):
+# def login(date:LoginRequest,db: Session=Depends(get_db)):
+def login(date:OAuth2PasswordRequestForm = Depends(),db: Session=Depends(get_db)):
     user = db.query(models.User).filter(models.User.username==date.username).first()
     if not user or not verify_password(date.password,user.hashed_password):
         raise HTTPException(status_code=401,detail="Invalid username or password")

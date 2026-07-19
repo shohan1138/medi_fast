@@ -73,7 +73,7 @@ def _check_double_booking(db, doctor_id, appointment_date, exclude_id=None):
 # ── ENDPOINTS ──────────────────────────────────────────────
 
 # patient: book an appointment
-@router.post("/", response_model=AppointmentResponse, status_code=201)
+@router.post("/", response_model=AppointmentResponse, status_code=201, summary="Book Appointment")
 def book_appointment(
     data: AppointmentCreate,
     db: Session = Depends(get_db),
@@ -200,7 +200,7 @@ def my_appointment(
 
 
 # admin/management: list all appointments
-@router.get("/", response_model=list[AppointmentResponse])
+@router.get("/", response_model=list[AppointmentResponse], summary="List all Appointments (only for Admin and Management)")
 def list_appointments(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)

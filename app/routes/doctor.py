@@ -180,7 +180,7 @@ def get_my_schedule(
     db:Session=Depends(get_db),
     current_user=Depends(get_current_user)
 ):
-    doctor==db.query(models.Doctor).filter(
+    doctor = db.query(models.Doctor).filter(
         models.Doctor.UserId==current_user.UserId
     ).first()
     if not doctor:

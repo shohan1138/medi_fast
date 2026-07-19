@@ -109,7 +109,7 @@ def get_parient(
     allowed={"admin","managment","doctor","nurse"}
     if not current_user.is_superuser and not (roles & allowed):
         raise HTTPException(status_code=403,detail="Access Denied")
-    patient=db.querry(models.Patient).filter(
+    patient=db.query(models.Patient).filter(
         models.Patient.PatientId==patient_id
     ).first()
     if not patient:

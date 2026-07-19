@@ -95,7 +95,7 @@ class Appointment(Base):
     doctor = relationship("Doctor", back_populates="appointments")
 
     medical_records = relationship("MedicalRecord", back_populates="appointment")
-    prescriptions = relationship("Prescription", back_populates="appointment")
+    prescriptions = relationship("prescription", back_populates="appointment")
     invoices = relationship("Invoice", back_populates="appointment")
 
 # ---------------- MEDICAL ----------------
@@ -128,9 +128,9 @@ class LabReport(Base):
 
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
-# ---------------- PRESCRIPTION ----------------
+# ---------------- prescription ----------------
 
-class Prescription(Base):
+class prescription(Base):
     __tablename__ = "prescriptions"
     PrescriptionId = Column(Integer, primary_key=True)
 
@@ -140,7 +140,7 @@ class Prescription(Base):
     status = Column(String)
 
     appointment = relationship("Appointment", back_populates="prescriptions")
-    items = relationship("PrescriptionItem", back_populates="prescription")
+    items = relationship("prescriptionItem", back_populates="prescription")
 
 
 class Medicine(Base):
@@ -153,18 +153,18 @@ class Medicine(Base):
     price = Column(Numeric(10, 2))
 
 
-class PrescriptionItem(Base):
+class prescriptionItem(Base):
     __tablename__ = "prescription_items"
     PrescriptionItemId = Column(Integer, primary_key=True)
 
     PrescriptionId = Column(Integer, ForeignKey("prescriptions.PrescriptionId"))
-    MedicineId = Column(Integer, ForeignKey("medicines.MedicineId"))
+    medicine_name = Column(String, nullable=False)
 
     dosage = Column(String)
     frequency = Column(String)
     duration = Column(String)
 
-    prescription = relationship("Prescription", back_populates="items")
+    prescription = relationship("prescription", back_populates="items")
 
 # ---------------- BILLING ----------------
 
