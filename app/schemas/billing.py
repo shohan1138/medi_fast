@@ -1,31 +1,111 @@
 from pydantic import BaseModel
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, date
 from decimal import Decimal
-from enum import Enum
 
-class InvoiceStautus(str,Enum):
-    pending="pending"
-    paid="paid"
-    rejected="rejected"
+from app.models.models import InvoiceStatus, InvoiceItemType
+
+
+# ---------------- Invoice Items ----------------
+
+class InvoiceItemCreate(BaseModel):
+    item_type: InvoiceItemType
+    reference_id: Optional[int] = None
+    description: str
+    unit_price: Decimal
+    quantity: Decimal = Decimal("1")
+
+
+class InvoiceItemResponse(InvoiceItemCreate):
+    InvoiceItemId: int
+    subtotal: Decimal
+
+    model_config = {
+        "from_attributes": True
+    }
+
+
+# ---------------- Invoice ----------------
 
 class InvoiceCreate(BaseModel):
-    AppointmentId:int
-    total_amout:Decimal
-    insurance_provider:Optional[str]=None
-    status:InvoiceStautus=InvoiceStautus.pending
+    PatientId: int
+    AppointmentId: Optional[int] = None
+    items: list[InvoiceItemCreate]
+
 
 class InvoiceUpdate(BaseModel):
-    total_amount:Optional[Decimal]=None
-    status:Optional[InvoiceStautus]=None
-    insurance_provider:Optional[str]=None
+    status: Optional[InvoiceStatus] = None
+    insurance_provider: Optional[str] = None
+
 
 class InvoiceResponse(BaseModel):
-    InvoiceId:int
-    Appoitment:int
-    total_amount:Decimal
-    status:str
-    insurance_provider:Optional[str]
-    billing_date:datetime
+    InvoiceId: int
+    PatientId: int
+    AppointmentId: Optional[int]
 
-    model_config={"from_attributes":True}
+    total_amount: Decimal
+    status: InvoiceStatus
+
+    created_at: datetime
+    insurance_provider: Optional[str]
+    billing_date: date
+
+    items: list[InvoiceItemResponse] = []
+
+    model_config = {
+        "from_attributes": True
+    }
+
+
+# ---------------- Ward ----------------
+
+class WardCreate(BaseModel):
+    name: str
+    daily_rate: Decimal
+
+
+class WardResponse(WardCreate):
+    WardId: int
+
+    model_config = {
+        "from_attributes": True
+    }
+
+
+# ---------------- Bed ----------------
+
+class BedCreate(BaseModel):
+    WardId: int
+    bed_number: str
+
+
+class BedResponse(BaseModel):
+    BedId: int
+    WardId: int
+
+    bed_number: str
+    is_occupied: bool
+
+    model_config = {
+        "from_attributes": True
+    }
+
+
+# ---------------- Ward Assignment ----------------
+
+class WardAssignmentCreate(BaseModel):
+    PatientId: int
+    BedId: int
+
+
+class WardAssignmentResponse(BaseModel):
+    WardAssignmentId: int
+    PatientId: int
+    BedId: int
+
+    admitted_at: datetime
+    discharged_at: Optional[datetime]
+
+    model_config = {
+        "from_attributes": True
+    }

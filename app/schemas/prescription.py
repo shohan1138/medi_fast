@@ -44,6 +44,7 @@ class prescriptionItemUpdate(BaseModel):
     dosage: Optional[str]=None
     frequency: Optional[str]=None
     duration:Optional[str]=None
+    medicine_name:Optional[str] =None
 
 class prescriptionItemResponse(BaseModel):
     PrescriptionItemId:int
@@ -66,7 +67,7 @@ class prescriptionStatusUpdate(BaseModel):
     status:Optional[prescriptionStatus]=None
 
 class prescriptionResponse(BaseModel):
-    prescriptionId:int
+    PrescriptionId:int
     AppointmentId:int
     issued_at:datetime
     status:str

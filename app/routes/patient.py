@@ -85,7 +85,7 @@ def update_my_profile(
     ).first()
     return patient
 
-# admin /managment : list all patient 
+# admin /management : list all patient 
 @router.get("/",response_model=list[PatientResponse])                                
 def list_patients(
     db:Session=Depends(get_db),
@@ -93,7 +93,7 @@ def list_patients(
 
 ):
     roles={r.RoleName for r in current_user.roles}
-    allowed={"admin","managment","doctor","nurse"}
+    allowed={"admin","management","doctor","nurse"}
     if not current_user.is_superuser and not (roles & allowed):
         raise HTTPException(status_code=403,detail="Access Denied")
     return db.query(models.Patient).all()
@@ -106,7 +106,7 @@ def get_parient(
     current_user=Depends(get_current_user)
 ):
     roles={r.RoleName for r in current_user.roles}
-    allowed={"admin","managment","doctor","nurse"}
+    allowed={"admin","management","doctor","nurse"}
     if not current_user.is_superuser and not (roles & allowed):
         raise HTTPException(status_code=403,detail="Access Denied")
     patient=db.query(models.Patient).filter(

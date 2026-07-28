@@ -1,7 +1,10 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Boolean, Numeric
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Boolean, Numeric, Enum, Date,Float,DECIMAL
 from sqlalchemy.orm import relationship
 from ..database import Base
 import datetime
+import enum
+import uuid
+
 
 # ---------------- USERS & ROLES ----------------
 
@@ -55,6 +58,9 @@ class Patient(Base):
 
     user = relationship("User", back_populates="patients")
     appointments = relationship("Appointment", back_populates="patient")
+    invoices = relationship("Invoice",back_populates="patient",)
+    ward_assignments = relationship("WardAssignment")
+    
 
 
 class Doctor(Base):
@@ -140,7 +146,7 @@ class prescription(Base):
     status = Column(String)
 
     appointment = relationship("Appointment", back_populates="prescriptions")
-    items = relationship("prescriptionItem", back_populates="prescription")
+    items = relationship("prescriptionItem", back_populates="prescription",cascade="all, delete-orphan")
 
 
 class Medicine(Base):
@@ -168,16 +174,87 @@ class prescriptionItem(Base):
 
 # ---------------- BILLING ----------------
 
+class InvoiceStatus(str, enum.Enum):
+    PENDING = "pending"
+    PARTIAL = "partial"
+    PAID = "paid"
+    CANCELLED = "cancelled"
+
+
+class InvoiceItemType(str, enum.Enum):
+    APPOINTMENT = "appointment"
+    TEST = "test"
+    WARD = "ward"
+    BED = "bed"
+
+
+class Ward(Base):
+    __tablename__ = "wards"
+    WardId = Column(Integer, primary_key=True)
+
+    name = Column(String, nullable=False)
+    daily_rate = Column(DECIMAL(10, 2), nullable=False)
+
+    beds = relationship("Bed", back_populates="ward")
+
+
+class Bed(Base):
+    __tablename__ = "beds"
+    BedId = Column(Integer, primary_key=True)
+    WardId = Column(Integer, ForeignKey("wards.WardId"), nullable=False)
+
+    bed_number = Column(String, nullable=False)
+    is_occupied = Column(Boolean, default=False)
+
+    ward = relationship("Ward", back_populates="beds")
+
+
+class WardAssignment(Base):
+    __tablename__ = "ward_assignments"
+    WardAssignmentId = Column(Integer, primary_key=True)
+    PatientId = Column(Integer, ForeignKey("patients.PatientId"), nullable=False)
+    BedId = Column(Integer, ForeignKey("beds.BedId"), nullable=False)
+
+    admitted_at = Column(DateTime, default=datetime.datetime.utcnow)
+    discharged_at = Column(DateTime, nullable=True)
+
+    bed = relationship("Bed")
+    patient = relationship("Patient",back_populates="ward_assignments",)
+
+
 class Invoice(Base):
     __tablename__ = "invoices"
     InvoiceId = Column(Integer, primary_key=True)
+    PatientId = Column(Integer, ForeignKey("patients.PatientId"), nullable=False)
+    AppointmentId = Column(Integer, ForeignKey("appointments.AppointmentId"), nullable=True)
 
-    AppointmentId = Column(Integer, ForeignKey("appointments.AppointmentId"))
-
-    total_amount = Column(Numeric(10, 2))
-    status = Column(String)
-    insurance_provider = Column(String)
-
-    billing_date = Column(DateTime, default=datetime.datetime.utcnow)
+    total_amount = Column(DECIMAL(10, 2), default=0.0)
+    status = Column(
+        Enum(InvoiceStatus, name="invoicestatus", values_callable=lambda obj:[e.value for e in obj]),
+        default=InvoiceStatus.PENDING,
+    )
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     appointment = relationship("Appointment", back_populates="invoices")
+    patient = relationship("Patient",back_populates="invoices",)
+    items = relationship("InvoiceItem", back_populates="invoice", cascade="all, delete-orphan")
+    insurance_provider = Column(String, nullable=True)
+    billing_date= Column(Date, default=datetime.date.today)
+
+
+class InvoiceItem(Base):
+    __tablename__ = "invoice_items"
+    InvoiceItemId = Column(Integer, primary_key=True)
+    InvoiceId = Column(Integer, ForeignKey("invoices.InvoiceId"), nullable=False)
+
+    item_type = Column(
+        Enum(InvoiceItemType,name="invoiceitemtype",values_callable=lambda obj:[e.value for e in obj]),
+        nullable=False,
+    )
+    reference_id = Column(Integer, nullable=True)
+    description = Column(String, nullable=False)
+    unit_price = Column(DECIMAL(10, 2), nullable=False)
+    quantity = Column(DECIMAL(10, 2), default=1)
+    subtotal = Column(DECIMAL(10, 2), nullable=False)
+
+    invoice = relationship("Invoice", back_populates="items")

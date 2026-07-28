@@ -37,18 +37,18 @@ def get_current_user(
     return user
 # helper:get role names as a set
 def _roles(user)-> set:
-    return {r.Rolename for r in user.roles}
+    return {r.RoleName for r in user.roles}
 # layer-1:admin
 def require_admin(current_user=Depends(get_current_user)):
     roles=[r.RoleName for r in current_user.roles]
     if "admin" not in roles and not current_user.is_superuser:
         raise HTTPException(status_code=403,detail="Admin access required")
     return current_user
-# layer-2:managment
-def require_managment(current_user=Depends(get_current_user)):
-    allowed={"admin","managment"}
+# layer-2:management
+def require_management(current_user=Depends(get_current_user)):
+    allowed={"admin","management"}
     if not current_user.is_superuser and not (_roles(current_user)&allowed):
-        raise HTTPException(status_code=403,detail="Managment access required")
+        raise HTTPException(status_code=403,detail="management access required")
     return current_user
 # layer -3 Operational roles
 def require_doctor(current_user=Depends(get_current_user)):
@@ -57,23 +57,42 @@ def require_doctor(current_user=Depends(get_current_user)):
         raise HTTPException(status_code=403,detail="Doctor access required")
     return current_user
 def require_nurse(current_user=Depends(get_current_user)):
-    allowed={"admin","managment","nurse"}
+    allowed={"admin","management","nurse"}
     if not current_user.is_superuser and not (_roles(current_user)& allowed):
         raise HTTPException(status_code=403,detail="Nurse access required")
     return current_user
 
 def require_pharmacist(current_user=Depends(get_current_user)):
-    allowed={"admin","managment","pharmacist"}
+    allowed={"admin","management","pharmacist"}
     if not current_user.is_superuser and not (_roles(current_user)&allowed):
-        raise HTTPException(status=403,detail="pharmacist access required")
+        raise HTTPException(status_code=403,detail="Pharmacist access required")
     return current_user
 def require_lab_tech(current_user=Depends(get_current_user)):
-    allowed={"admin","managment","lab_technician"}
+    allowed={"admin","management","lab_technician"}
     if not current_user.is_superuser and not (_roles(current_user)&allowed):
         raise HTTPException(status_code=403,detail="Lab technician access required")
     return current_user
 def require_patient(current_user=Depends(get_current_user)):
-    allowed={"admin","managment","patient"}
+    allowed={"admin","management","patient"}
     if not current_user.is_superuser and not (_roles(current_user)&allowed):
         raise HTTPException(status_code=403,detail="patient access required")
     return current_user
+
+
+def require_role(role_names: list[str]):
+    def checker(current_user=Depends(get_current_user)):
+
+        if current_user.is_superuser:
+            return current_user
+
+        user_roles = _roles(current_user)
+
+        if not user_roles.intersection(role_names):
+            raise HTTPException(
+                status_code=403,
+                detail="Insufficient permissions"
+            )
+
+        return current_user
+
+    return checker
