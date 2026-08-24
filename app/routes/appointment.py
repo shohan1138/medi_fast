@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from datetime import datetime
 from app.utility.deps import get_db, get_current_user
 from app.schemas.appointment import (
@@ -13,9 +14,10 @@ router = APIRouter(prefix="/appointments", tags=["Appointment"])
 # ── helpers ────────────────────────────────────────────────
 def _check_status_transition(current_status:str,new_status:str):
     allowed_transitions={
-        "scheduled": ["completed","cancelled"],
+        "scheduled": ["completed","cancelled", "no_show"],
         "completed": [],
         "cancelled": [],
+        "no_show": [],
     }
     if new_status not in allowed_transitions.get(current_status,[]):
         raise HTTPException(
@@ -39,7 +41,7 @@ def _validate_schedule(db, doctor_id, appointment_date):
     day_name = appointment_date.strftime("%A")
     schedules = db.query(models.DoctorSchedule).filter(
         models.DoctorSchedule.DoctorId == doctor_id,
-        models.DoctorSchedule.day_of_week == day_name
+        func.lower(models.DoctorSchedule.day_of_week) == day_name.lower()
     ).all()
     if not schedules:
         raise HTTPException(
@@ -80,9 +82,11 @@ def book_appointment(
     current_user=Depends(get_current_user)
 ):
     roles = {r.RoleName for r in current_user.roles}
-    is_admin = current_user.is_superuser or "admin" in roles or "management" in roles
+    is_staff = current_user.is_superuser or bool(roles & {"admin", "management", "receptionist"})
 
-    if is_admin:
+    if is_staff:
+        if not data.PatientId:
+            raise HTTPException(status_code=400, detail="PatientId is required when booking on behalf of a patient")
         patient_id = data.PatientId
         patient = db.query(models.Patient).filter(
             models.Patient.PatientId == patient_id
@@ -206,11 +210,10 @@ def list_appointments(
     current_user=Depends(get_current_user)
 ):
     roles = {r.RoleName for r in current_user.roles}
-    allowed = {"admin", "management"}
+    allowed = {"admin", "management", "receptionist", "lab_technician"}
     if not current_user.is_superuser and not (roles & allowed):
         raise HTTPException(status_code=403, detail="Access Denied")
     return db.query(models.Appointment).all()
-
 
 # view a single appointment (owner or admin)
 @router.get("/{appointment_id}", response_model=AppointmentResponse)
@@ -218,7 +221,7 @@ def get_appointment(
     appointment_id: int,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
-):                                                      # ← body properly indented inside function
+):
     appointment = db.query(models.Appointment).filter(
         models.Appointment.AppointmentId == appointment_id
     ).first()
@@ -226,12 +229,13 @@ def get_appointment(
         raise HTTPException(status_code=404, detail="Appointment not found")
 
     roles = {r.RoleName for r in current_user.roles}
-    if current_user.is_superuser or "admin" in roles or "management" in roles:
+    staff_roles = {"admin", "management", "receptionist", "lab_technician"}
+    if current_user.is_superuser or (roles & staff_roles):
         return appointment
 
     if "patient" in roles:
         patient = db.query(models.Patient).filter(
-            models.Patient.UserId == current_user.UserId    # ← lowercase current_user
+            models.Patient.UserId == current_user.UserId
         ).first()
         if patient and patient.PatientId == appointment.PatientId:
             return appointment

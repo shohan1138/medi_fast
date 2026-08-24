@@ -30,6 +30,8 @@ class InvoiceItemResponse(InvoiceItemCreate):
 class InvoiceCreate(BaseModel):
     PatientId: int
     AppointmentId: Optional[int] = None
+    insurance_provider: Optional[str] = None
+    billing_date: Optional[date] =None
     items: list[InvoiceItemCreate]
 
 
@@ -55,6 +57,8 @@ class InvoiceResponse(BaseModel):
     model_config = {
         "from_attributes": True
     }
+
+
 
 
 # ---------------- Ward ----------------

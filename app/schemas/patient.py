@@ -27,4 +27,14 @@ class PatientResponse(BaseModel):
     emergency_contact_name:str
     emergency_contact_phone:str
     medical_history:Optional[str]
+    FullName: Optional[str] = None
     model_config={"from_attributes":True}
+
+class PatientCreateForUser(BaseModel):
+    UserId: int
+    age: int
+    blood_type: str
+    gender: str
+    emergency_contact_name: str
+    emergency_contact_phone: str
+    medical_history: Optional[str] = None

@@ -1,6 +1,6 @@
 from fastapi import APIRouter,Depends,HTTPException,status
 from sqlalchemy.orm import Session
-from app.utility.deps import get_current_user,get_db,require_admin
+from app.utility.deps import get_current_user,get_db,require_admin,require_admin_or_management
 from app.utility.auth import hash_password,verify_password,create_access_token
 from app.schemas.user import UserCreate,UserResponse,LoginRequest,TokenResponse,RoleCreate,RoleResponse,ChangePasswordRequest,UserUpdate
 from app.models import models
@@ -63,9 +63,9 @@ def create_role(data:RoleCreate,db:Session=Depends(get_db)):
     db.refresh(role)
     return role
 
-# admin only list all roles
+# admin/management: list all roles
 @router.get("/roles",response_model=list[RoleResponse],
-            dependencies=[Depends(require_admin)])
+            dependencies=[Depends(require_admin_or_management)])
 def list_roles(db:Session=Depends(get_db)):
     return db.query(models.Role).all()
 
@@ -140,35 +140,50 @@ def assign_role(
 
     return user
 
-# admin :can remove Role from user
+# Tiered permission pattern for removing roles
+@router.delete("/users/{user_id}/roles/{role_name}", response_model=UserResponse)
+def remove_role(
+    user_id: int, role_name: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    user_roles = {r.RoleName for r in current_user.roles}
+    admin_only_roles = {"admin", "management"}
+    management_only_roles = {"doctor", "nurse", "pharmacist", "lab_technician", "patient"}
+    is_admin = current_user.is_superuser or "admin" in user_roles
+    is_management = "management" in user_roles
 
-@router.delete("/users/{user_id}/roles/{role_name}", response_model=UserResponse,dependencies=[Depends(require_admin)])
-def remove_role(user_id:int, role_name:str,db:Session=Depends(get_db)):
-    user =db.query(models.User).filter(models.User.UserId==user_id).first()
+    if role_name in admin_only_roles and not is_admin:
+        raise HTTPException(status_code=403, detail=f"Only admin can remove '{role_name}' role")
+    if role_name in management_only_roles and not (is_admin or is_management):
+        raise HTTPException(status_code=403, detail="Management or Admin access required")
+
+    user = db.query(models.User).filter(models.User.UserId == user_id).first()
     if not user:
-        raise HTTPException(status_code=404,detail="User not found")
-    role =db.query(models.Role).filter(models.Role.RoleName==role_name).first()
+        raise HTTPException(status_code=404, detail="User not found")
+    role = db.query(models.Role).filter(models.Role.RoleName == role_name).first()
     if not role or role not in user.roles:
-        raise HTTPException(status_code=404,detail=f"user does not have a role'{role_name}'")
+        raise HTTPException(status_code=404, detail=f"user does not have a role '{role_name}'")
     user.roles.remove(role)
     db.commit()
     db.refresh(user)
     return user
-# admin :list all user
-@router.get("/users",response_model=list[UserResponse],dependencies=[Depends(require_admin)])
+
+# admin/management: list all users
+@router.get("/users",response_model=list[UserResponse],dependencies=[Depends(require_admin_or_management)])
 def list_users(db:Session=Depends(get_db)):
     return db.query(models.User).all()
 
-# admin :get single User
+# admin/management: get single User
 @router.get("/users/{user_id}",response_model=UserResponse,
-            dependencies=[Depends(require_admin)])
+            dependencies=[Depends(require_admin_or_management)])
 def get_user(user_id:int,db:Session=Depends(get_db)):
     user=db.query(models.User).filter(models.User.UserId==user_id).first()
     if not user:
         raise HTTPException(status_code=404,detail="User not found")
     return user
 
-# admin : deactivate/activate user
+# admin: deactivate/activate user
 @router.patch("/users/{user_id}/status", response_model=UserResponse,dependencies=[Depends(require_admin)])
 def toggle_user_status(user_id:int,db:Session=Depends(get_db)):
     user=db.query(models.User).filter(models.User.UserId==user_id).first()
@@ -208,4 +223,3 @@ def update_user(user_id:int,data:UserUpdate,db:Session=Depends(get_db)):
     db.commit()
     db.refresh(user)
     return user
-    

@@ -40,48 +40,59 @@ def _is_doctor_of_appointment(db,doctor,appointment_id):
 
 # /////////////////prescriptions////////////////////////
 prescription_router=APIRouter(prefix="/prescriptions",tags=["prescriptions"])
-
-@prescription_router.post("/",response_model=prescriptionResponse,status_code=201)
+@prescription_router.post("/", response_model=prescriptionResponse, status_code=201)
 def create_prescription(
-    data:prescriptionCreate,
-    db:Session=Depends(get_db),
+    data: prescriptionCreate,
+    db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
-    roles={r.RoleName for r in current_user.roles}
-    is_admin=current_user.is_superuser or "admin" in roles
+    roles = {r.RoleName for r in current_user.roles}
+    is_admin = current_user.is_superuser or "admin" in roles
 
     if not is_admin and "doctor" not in roles:
-        raise HTTPException(status_code=403,detail="Only Doctor can create prescriptions")
-    appointment=db.query(models.Appointment).filter(
-        models.Appointment.AppointmentId==data.AppointmentId
+        raise HTTPException(status_code=403, detail="Only Doctor can create prescriptions")
+    appointment = db.query(models.Appointment).filter(
+        models.Appointment.AppointmentId == data.AppointmentId
     ).first()
     if not appointment:
-        raise HTTPException(status_code=404,detail="Appointment not found")
-    
-    # completed appointment only 
-    if appointment.status!="completed":
-        raise HTTPException(status_code=400,detail=f"prescription can only br created for completed appointments."
+        raise HTTPException(status_code=404, detail="Appointment not found")
+
+    if appointment.status != "completed":
+        raise HTTPException(status_code=400, detail=f"Prescription can only be created for completed appointments."
                             f"Current status:'{appointment.status}'"
         )
-    # doctor must own this appointment 
     if not is_admin:
-        doctor=_get_doctor_or_403(db,current_user)
+        doctor = _get_doctor_or_403(db, current_user)
         _is_doctor_of_appointment(db, doctor, data.AppointmentId)
 
-    # one prescription per appointment 
-    existing=db.query(models.prescription).filter(
-        models.prescription.AppointmentId==data.AppointmentId
+    existing = db.query(models.prescription).filter(
+        models.prescription.AppointmentId == data.AppointmentId
     ).first()
     if existing:
-        raise HTTPException(status_code=400,detail=f"prescription already exists for this appointment."
+        raise HTTPException(status_code=400, detail=f"Prescription already exists for this appointment."
                             f"Use PATCH /prescriptions/{existing.PrescriptionId}/items to add medicines."
         )
-    prescription=models.prescription(AppointmentId=data.AppointmentId,status="active",)
-    db.add(prescription)
-    db.commit()
 
+    prescription = models.prescription(AppointmentId=data.AppointmentId, status=data.status)
+    db.add(prescription)
+    db.flush()
+
+    seen_names = set()
+    for item in data.items:
+        if item.medicine_name in seen_names:
+            raise HTTPException(status_code=400, detail=f"Duplicate medicine '{item.medicine_name}' in request")
+        seen_names.add(item.medicine_name)
+        db.add(models.prescriptionItem(
+            PrescriptionId=prescription.PrescriptionId,
+            medicine_name=item.medicine_name,
+            dosage=item.dosage,
+            frequency=item.frequency,
+            duration=item.duration,
+        ))
+
+    db.commit()
     return db.query(models.prescription).filter(
-        models.prescription.AppointmentId==data.AppointmentId
+        models.prescription.AppointmentId == data.AppointmentId
     ).first()
 
 # patient/doctor: view own prescriptions 
@@ -232,7 +243,7 @@ def get_prescription_items(
     is_admin=current_user.is_superuser or "admin" in roles or "management" in roles
     is_pharmacist="pharmacist" in roles
     
-    if is_admin and is_pharmacist:
+    if is_admin or is_pharmacist:
         pass
     else:
         appointment=db.query(models.Appointment).filter(
@@ -258,46 +269,40 @@ def get_prescription_items(
             
 # doctor: update prescription item 
 
-@prescription_router.patch("/{prescription_id}/items/{item_id}",response_model=prescriptionItemResponse)
-def update_prescription_item(
-    prescription_id:int,
-    item_id:int,
-    data:prescriptionItemUpdate,
-    db:Session =Depends(get_db),
+@prescription_router.patch("/{prescription_id}/status", response_model=prescriptionResponse)
+def update_prescription_status(
+    prescription_id: int,
+    data: prescriptionStatusUpdate,
+    db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
-    roles={r.RoleName for r in current_user.roles}
-    is_admin=current_user.is_superuser or "admin" in roles
+    roles = {r.RoleName for r in current_user.roles}
+    is_admin = current_user.is_superuser or "admin" in roles
 
     if not is_admin and "doctor" not in roles:
-        raise HTTPException(status_code=403,detail="Only doctors can update prescription itmes")
-    prescription= _get_prescription_or_404(db,prescription_id)
-    if prescription.status != "active":
-        raise HTTPException(
-            status_code=400,detail=f"Cannot update items in a '{prescription.status}' prescription"
-        )
-    item= db.query(models.prescriptionItem).filter(
-        models.prescriptionItem.PrescriptionItemId==item_id,
-        models.prescriptionItem.PrescriptionId==prescription_id
-    ).first()
-    if not item:
-        raise HTTPException(status_code=404,detail="Prescription item not found")
-    updates=data.model_dump(exclude_unset=True)
-    if not updates:
-        raise HTTPException(status_code=400,detail="No fields provided to update")
-    
-    db.query(models.prescriptionItem).filter(
-        models.prescriptionItem.PrescriptionItemId==item_id
-    ).update(updates)
+        raise HTTPException(status_code=403, detail="Only doctors can update prescription status")
+
+    prescription = _get_prescription_or_404(db, prescription_id)
+
+    if not is_admin:
+        doctor = _get_doctor_or_403(db, current_user)
+        _is_doctor_of_appointment(db, doctor, prescription.AppointmentId)
+
+    if data.status is None:
+        raise HTTPException(status_code=400, detail="No status provided")
+
+    db.query(models.prescription).filter(
+        models.prescription.PrescriptionId == prescription_id
+    ).update({"status": data.status})
     db.commit()
 
-    return db.query(models.prescriptionItem).filter(
-        models.prescriptionItem.PrescriptionItemId==item_id
+    return db.query(models.prescription).filter(
+        models.prescription.PrescriptionId == prescription_id
     ).first()
 
 # doctor: remove item from prescription 
 
-@prescription_router.delete("/{prescription_id}/items/{item_id},status_code=200")
+@prescription_router.delete("/{prescription_id}/items/{item_id}" , status_code=200)
 def delete_prescription_item(
     prescription_id:int,
     item_id:int,
@@ -324,3 +329,54 @@ def delete_prescription_item(
     db.commit()
     return {"msg": f"Item {item_id} removed from prescription {prescription_id}"}
 
+@prescription_router.get("/", response_model=list[prescriptionResponse])
+def list_prescriptions(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    roles = {r.RoleName for r in current_user.roles}
+    allowed = {"admin", "management"}
+    if not current_user.is_superuser and not (roles & allowed):
+        raise HTTPException(status_code=403, detail="Access Denied")
+    return db.query(models.prescription).all()
+
+
+@prescription_router.get("/appointment/{appointment_id}", response_model=prescriptionResponse)
+def get_prescription_by_appointment(
+    appointment_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    roles = {r.RoleName for r in current_user.roles}
+    is_admin = current_user.is_superuser or "admin" in roles or "management" in roles
+
+    prescription = db.query(models.prescription).filter(
+        models.prescription.AppointmentId == appointment_id
+    ).first()
+    if not prescription:
+        raise HTTPException(status_code=404, detail="No prescription found for this appointment")
+
+    if is_admin:
+        return prescription
+
+    appointment = db.query(models.Appointment).filter(
+        models.Appointment.AppointmentId == appointment_id
+    ).first()
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+
+    if "doctor" in roles:
+        doctor = _get_doctor_or_403(db, current_user)
+        if doctor.DoctorId == appointment.DoctorId:
+            return prescription
+    if "patient" in roles:
+        patient = db.query(models.Patient).filter(
+            models.Patient.UserId == current_user.UserId
+        ).first()
+        if patient and patient.PatientId == appointment.PatientId:
+            return prescription
+
+    raise HTTPException(status_code=403, detail="Access Denied")
+
+
+router.include_router(prescription_router)

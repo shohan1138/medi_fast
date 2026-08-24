@@ -10,12 +10,12 @@ class AppointmentStatus(str,Enum):
     no_show="no_show"
 
 class AppointmentCreate(BaseModel):
-    # PatientId:int
-    DoctorId:int
-    appointment_date:datetime
-    notes:Optional[str]=None
-    status:AppointmentStatus=AppointmentStatus.scheduled
-
+    PatientId: Optional[int] = None
+    DoctorId: int
+    appointment_date: datetime
+    notes: Optional[str] = None
+    status: AppointmentStatus = AppointmentStatus.scheduled
+    
 class AppointmentUpdate(BaseModel):
     appointment_date:Optional[datetime]=None
     status:Optional[AppointmentStatus]=None

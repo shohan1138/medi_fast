@@ -342,3 +342,8 @@ def delete_lab_report(report_id: int,db: Session=Depends(get_db)):
     db.delete(report)
     db.commit()
     return {"msg": f"Lab Report {report_id} deleted"}
+
+
+
+router.include_router(medical_router)
+router.include_router(lab_router)

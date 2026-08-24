@@ -78,6 +78,11 @@ def require_patient(current_user=Depends(get_current_user)):
         raise HTTPException(status_code=403,detail="patient access required")
     return current_user
 
+def require_admin_or_management(current_user=Depends(get_current_user)):
+    roles = {r.RoleName for r in current_user.roles}
+    if not current_user.is_superuser and not (roles & {"admin", "management"}):
+        raise HTTPException(status_code=403, detail="Admin or management access required")
+    return current_user
 
 def require_role(role_names: list[str]):
     def checker(current_user=Depends(get_current_user)):

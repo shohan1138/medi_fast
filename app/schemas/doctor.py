@@ -6,6 +6,11 @@ class DoctorCreate(BaseModel):
     specialty:str
     license_number:str
 
+class DoctorCreateForUser(BaseModel):
+    UserId: int
+    specialty: str
+    license_number: str
+
 class DoctorUpdate(BaseModel):
     specialty:Optional[str]=None
     license_number:Optional[str]=None
@@ -15,8 +20,9 @@ class DoctorResponse(BaseModel):
     UserId:int
     specialty:str
     license_number:str
-    model_config={"from_attributes":True}
-
+    FullName: Optional[str] =None
+    model_config = {"from_attributes": True}
+    
 # doctor schedule:
 class DoctorScheduleCreate(BaseModel):
     day_of_week:str

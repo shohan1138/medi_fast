@@ -57,6 +57,11 @@ class Patient(Base):
     medical_history = Column(Text)
 
     user = relationship("User", back_populates="patients")
+
+    @property
+    def FullName(self):
+        return self.user.FullName if self.user else None
+    
     appointments = relationship("Appointment", back_populates="patient")
     invoices = relationship("Invoice",back_populates="patient",)
     ward_assignments = relationship("WardAssignment")
@@ -72,6 +77,11 @@ class Doctor(Base):
     license_number = Column(String, unique=True)
 
     user = relationship("User", back_populates="doctors")
+
+    @property
+    def FullName(self):
+        return self.user.FullName if self.user else None
+    
     appointments = relationship("Appointment", back_populates="doctor")
 
 

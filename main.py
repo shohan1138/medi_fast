@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from app.database import engine, Base
@@ -6,7 +9,6 @@ from app.routes import auth, patient,doctor,appointment,billing,medical,prescrip
 # from app.routes.medical import medical_router,lab_router
 # from app.routes.prescription import prescription_router
 # from app.routes.billing import router as billing_router
-
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
@@ -40,3 +42,5 @@ app.include_router(billing.router)
 @app.get("/")
 def read_root():
     return {"msg": "MediFast API is running"}
+
+

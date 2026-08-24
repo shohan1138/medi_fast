@@ -5,11 +5,55 @@ const MODULES = [
   {
     path: "/billing",
     label: "Billing & Invoices",
-    roles: ["admin", "receptionist"],
+    roles: ["admin", "receptionist", "doctor", "nurse"],
   },
-  { path: "/admin/users", label: "User Management", roles: ["admin"] },
+  {
+    path: "/patients",
+    label: "Patients",
+    roles: [
+      "admin",
+      "management",
+      "doctor",
+      "nurse",
+      "receptionist",
+      "patient",
+    ],
+  },
+  {
+    path: "/doctors",
+    label: "Doctors",
+    roles: [
+      "admin",
+      "management",
+      "doctor",
+      "nurse",
+      "receptionist",
+      "patient",
+    ],
+  },
+  {
+    path: "/appointments",
+    label: "Appointments",
+    roles: [
+      "admin",
+      "management",
+      "doctor",
+      "receptionist",
+      "patient",
+      "lab_technician",
+    ],
+  },
+  {
+    path: "/prescriptions",
+    label: "Prescriptions",
+    roles: ["admin", "management", "doctor", "patient"],
+  },
+  {
+    path: "/admin/users",
+    label: "User Management",
+    roles: ["admin", "management"],
+  },
 ];
-
 export default function DashboardPage() {
   const { user, logout, hasRole } = useAuth();
 
@@ -18,26 +62,10 @@ export default function DashboardPage() {
   const visibleModules = MODULES.filter((m) => hasRole(...m.roles));
 
   return (
-    <div className="min-h-screen bg-slate-50 p-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold text-slate-800">
-          MediFast Dashboard
-        </h1>
-        <div className="flex items-center gap-4">
-          <Link
-            to="/profile"
-            className="text-sm text-slate-600 hover:underline"
-          >
-            My Profile
-          </Link>
-          <button
-            onClick={logout}
-            className="text-sm text-red-600 hover:underline"
-          >
-            Log out
-          </button>
-        </div>
-      </div>
+    <div className="p-8">
+      <h1 className="text-2xl font-bold text-slate-800 mb-8">
+        MediFast Dashboard
+      </h1>
 
       {noRoles ? (
         <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-6 max-w-lg">

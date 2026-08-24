@@ -46,8 +46,11 @@ def create_invoice(
     invoice = Invoice(
         PatientId=payload.PatientId,
         AppointmentId=payload.AppointmentId,
+        insurance_provider=payload.insurance_provider,
         status=InvoiceStatus.PENDING,
     )
+    if payload.billing_date:
+        invoice.billing_date = payload.billing_date
 
     db.add(invoice)
     db.flush()
@@ -77,6 +80,14 @@ def create_invoice(
     db.refresh(invoice)
 
     return invoice
+
+# NEW: List all invoices (Admin / Receptionist)
+@router.get("/invoices", response_model=list[InvoiceResponse])
+def list_invoices(
+    db: Session = Depends(get_db),
+    current_user=Depends(require_role(["admin", "receptionist"])),
+):
+    return db.query(Invoice).order_by(Invoice.InvoiceId.desc()).all()
 
 @router.get(
     "/invoices/{invoice_id}",
@@ -194,7 +205,7 @@ def create_bed(
 def admit_patient(
     payload: WardAssignmentCreate,
     db: Session = Depends(get_db),
-    current_user=Depends(require_role(["admin", "doctor", "nurse"])),
+    current_user=Depends(require_role(["admin", "receptionist", "doctor", "nurse"])),
 ):
 
     bed = (
@@ -240,7 +251,7 @@ def admit_patient(
 def discharge_patient(
     assignment_id: int,
     db: Session = Depends(get_db),
-    current_user=Depends(require_role(["admin", "doctor", "nurse"])),
+    current_user=Depends(require_role(["admin", "receptionist", "doctor", "nurse"])),
 ):
 
     assignment = (
@@ -325,3 +336,39 @@ def discharge_patient(
     db.refresh(invoice)
 
     return invoice
+
+@router.get("/wards", response_model=list[WardResponse])
+def list_ward(
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
+):
+    return db.query(Ward).all()
+
+@router.get("/wards/{ward_id}/beds", response_model=list[BedResponse])
+def list_beds_in_ward(
+    ward_id: int,
+    db:Session =Depends(get_db),
+    current_user = Depends(get_current_user),
+):
+    return db.query(Bed).filter(
+        Bed.WardId == ward_id
+    ).all()
+
+@router.get("/ward-assignments", response_model=list[WardAssignmentResponse])
+def list_ward_assignment(
+    active_only: bool=True,
+    db:Session =Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    query=db.query(WardAssignment)
+    if active_only:
+        query = query.filter(WardAssignment.discharged_at.is_(None))
+    return query.all()
+
+@router.get("/patients/{patient_id}/invoices", response_model=list[InvoiceResponse])
+def get_patient_invoices(
+    patient_id:int,
+    db:Session = Depends(get_db),
+    current_user = Depends(get_current_user),
+):
+    return db.query(Invoice).filter(Invoice.PatientId == patient_id).all()
