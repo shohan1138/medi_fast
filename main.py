@@ -26,7 +26,7 @@ app.add_middleware(
 )
 
 
-Base.metadata.create_all(bind=engine) ##for creating table form model.py to any database 
+# Base.metadata.create_all(bind=engine) ##for creating table form model.py to any database 
 
 app.include_router(auth.router)
 app.include_router(patient.router)
