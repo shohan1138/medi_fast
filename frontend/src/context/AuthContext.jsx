@@ -32,7 +32,7 @@ export function AuthProvider({ children }) {
     form.append("username", username);
     form.append("password", password);
 
-    const res = await apiClient.post("/auth/login", form, {
+    const res = await apiClient.post("/auth/login/", form, {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
     });
     localStorage.setItem("access_token", res.data.access_token);
