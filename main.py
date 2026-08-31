@@ -19,11 +19,10 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5173","https://medi-fast-mmr9.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]
-
 )
 
 
