@@ -15,7 +15,7 @@ app = FastAPI(
     title="MediFast API",
     docs_url="/docs",
     redoc_url="/redoc",
-    redirect_slashes=False
+    # redirect_slashes=False
 )
 
 app.add_middleware(

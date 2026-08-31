@@ -29,7 +29,7 @@ export default function RegisterPage() {
     e.preventDefault();
     setError("");
     try {
-      await apiClient.post("/auth/register/", form);
+      await apiClient.post("/auth/register", form);
       setSuccess(true);
       // setTimeout(() => navigate("/login"), 2500)
     } catch (err) {
