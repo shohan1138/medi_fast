@@ -1,7 +1,7 @@
 🏥 MediFast - Hospital Management System
 A full-stack, role-based Hospital Management System designed to streamline workflows across 8 different hospital roles (Admin, Doctor, Patient, Receptionist, Nurse, Lab Technician, Pharmacist, Management).
 
-Live Demo: https://medi-fast-mmr9.vercel.appAPI Docs (Swagger): https://medi-fast-athome4.vercel.app/docs
+Live Demo: https://medi-fast-mmr9.vercel.app API Docs (Swagger): https://medi-fast-athome4.vercel.app/docs
 
 📸 Screenshots
 <img width="1228" height="571" alt="ward admission_2" src="https://github.com/user-attachments/assets/a0eb2bb9-0d2b-43d1-b038-6257bda1723f" />
