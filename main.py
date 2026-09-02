@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.database import engine, Base
 import app.models.models
-from app.routes import auth, patient, doctor, appointment, billing, medical, prescription
+from app.routes import auth, patient, doctor, appointment, billing, medical, prescription, reports
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
@@ -43,6 +43,7 @@ app.include_router(appointment.router)
 app.include_router(medical.router)
 app.include_router(prescription.router)
 app.include_router(billing.router)
+app.include_router(reports.router)
 
 @app.get("/")
 def read_root():
