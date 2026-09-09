@@ -10,9 +10,9 @@ import {
 import { getPatient } from "../../api/patient";
 import { getDoctor } from "../../api/doctor";
 import { getInvoicesByAppointment } from "../../api/billing";
-import { useToast } from "../context/ToastContext";
-import { useConfirm } from "../context/ConfirmContext";
-import Spinner from "../components/Spinner";
+import { useToast } from "../../context/ToastContext";
+import { useConfirm } from "../../context/ConfirmContext";
+import Spinner from "../../components/Spinner";
 
 const STATUS_COLORS = {
   scheduled: "bg-blue-100 text-blue-700",
