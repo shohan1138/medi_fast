@@ -1,23 +1,30 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../context/AuthContext";
 import {
   getAppointment,
   updateAppointmentStatus,
   rescheduleAppointment,
   cancelAppointment,
-} from "../../api/appointment";
-import { getPatient } from "../../api/patient";
-import { getDoctor } from "../../api/doctor";
-import { useToast } from "../../context/ToastContext";
-import { useConfirm } from "../../context/ConfirmContext";
-import Spinner from "../../components/Spinner";
+} from "../api/appointment";
+import { getPatient } from "../api/patient";
+import { getDoctor } from "../api/doctor";
+import { getInvoicesByAppointment } from "../api/billing";
+import { useToast } from "../context/ToastContext";
+import { useConfirm } from "../context/ConfirmContext";
+import Spinner from "../components/Spinner";
 
 const STATUS_COLORS = {
   scheduled: "bg-blue-100 text-blue-700",
   completed: "bg-green-100 text-green-700",
   cancelled: "bg-red-100 text-red-700",
   no_show: "bg-amber-100 text-amber-700",
+};
+const INVOICE_STATUS_COLORS = {
+  pending: "bg-amber-100 text-amber-700",
+  partial: "bg-blue-100 text-blue-700",
+  paid: "bg-green-100 text-green-700",
+  cancelled: "bg-red-100 text-red-700",
 };
 
 export default function AppointmentDetailPage() {
@@ -29,6 +36,7 @@ export default function AppointmentDetailPage() {
   const [appointment, setAppointment] = useState(null);
   const [patient, setPatient] = useState(null);
   const [doctor, setDoctor] = useState(null);
+  const [invoices, setInvoices] = useState(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [rescheduling, setRescheduling] = useState(false);
@@ -36,26 +44,24 @@ export default function AppointmentDetailPage() {
   const [newTime, setNewTime] = useState("");
 
   const canManageStatus = hasRole("admin", "management", "doctor");
-  // Allow staff to reschedule/cancel on behalf of patient as discussed earlier
-  const canReschedule = hasRole(
-    "patient",
-    "admin",
-    "management",
-    "receptionist",
-  );
+  const canReschedule = hasRole("patient");
+  const canSeeBilling = hasRole("admin", "receptionist");
 
   const load = async () => {
     try {
       const res = await getAppointment(appointmentId);
       setAppointment(res.data);
-      // best-effort — some roles may not have access to one or the other,
-      // so a failure here shouldn't block showing the appointment itself
       getPatient(res.data.PatientId)
         .then((r) => setPatient(r.data))
         .catch(() => {});
       getDoctor(res.data.DoctorId)
         .then((r) => setDoctor(r.data))
         .catch(() => {});
+      if (canSeeBilling) {
+        getInvoicesByAppointment(appointmentId)
+          .then((r) => setInvoices(r.data))
+          .catch(() => setInvoices([]));
+      }
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to load appointment");
     }
@@ -145,7 +151,7 @@ export default function AppointmentDetailPage() {
         </Link>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6 max-w-lg">
+      <div className="bg-white rounded-lg shadow p-6 max-w-lg mb-4">
         <dl className="grid grid-cols-2 gap-4 mb-6">
           <div>
             <dt className="text-sm text-slate-500">Patient</dt>
@@ -310,6 +316,56 @@ export default function AppointmentDetailPage() {
           </div>
         )}
       </div>
+
+      {canSeeBilling && (
+        <div className="bg-white rounded-lg shadow p-6 max-w-lg">
+          <h2 className="font-semibold text-slate-800 mb-3">Billing</h2>
+          {invoices === null ? (
+            <Spinner size="sm" />
+          ) : invoices.length === 0 ? (
+            <div>
+              <p className="text-sm text-slate-400 mb-3">
+                No invoice yet for this appointment.
+              </p>
+              <Link
+                to={`/billing/invoices/new?patientId=${appointment.PatientId}&appointmentId=${appointment.AppointmentId}`}
+                className="bg-blue-600 text-white text-sm px-3 py-1.5 rounded hover:bg-blue-700 inline-block"
+              >
+                + Create Invoice
+              </Link>
+            </div>
+          ) : (
+            <ul className="divide-y divide-slate-100">
+              {invoices.map((inv) => (
+                <li
+                  key={inv.InvoiceId}
+                  className="py-2 flex justify-between items-center text-sm"
+                >
+                  <span>
+                    Invoice #{inv.InvoiceId} ·{" "}
+                    <span
+                      className={`px-2 py-0.5 rounded text-xs font-medium ${INVOICE_STATUS_COLORS[inv.status] || "bg-slate-100 text-slate-700"}`}
+                    >
+                      {inv.status}
+                    </span>
+                  </span>
+                  <span className="flex items-center gap-3">
+                    <span className="text-slate-600">
+                      ${Number(inv.total_amount).toFixed(2)}
+                    </span>
+                    <Link
+                      to={`/billing/invoices/${inv.InvoiceId}`}
+                      className="text-blue-600 hover:underline"
+                    >
+                      View
+                    </Link>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
     </div>
   );
 }

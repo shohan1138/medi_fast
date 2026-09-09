@@ -13,6 +13,10 @@ export const updateInvoiceStatus = (invoiceId, status) =>
 export const getPatientInvoices = (patientId) =>
   apiClient.get(`/billing/patients/${patientId}/invoices`);
 
+// NEW: Get invoices by Appointment ID
+export const getInvoicesByAppointment = (appointmentId) =>
+  apiClient.get(`/billing/invoices/appointment/${appointmentId}`);
+
 // Wards / Beds
 export const listWards = () => apiClient.get("/billing/wards");
 export const createWard = (payload) =>

@@ -48,12 +48,19 @@ const MODULES = [
     label: "Prescriptions",
     roles: ["admin", "management", "doctor", "patient"],
   },
+  // NEW: Reports module for Admin and Management
+  {
+    path: "/reports",
+    label: "Reports",
+    roles: ["admin", "management"],
+  },
   {
     path: "/admin/users",
     label: "User Management",
     roles: ["admin", "management"],
   },
 ];
+
 export default function DashboardPage() {
   const { user, logout, hasRole } = useAuth();
 

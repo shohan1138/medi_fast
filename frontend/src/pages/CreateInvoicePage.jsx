@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { createInvoice } from "../api/billing";
 
 const ITEM_TYPES = ["appointment", "test", "ward", "bed"];
@@ -12,8 +12,13 @@ const emptyItem = {
 };
 
 export default function CreateInvoicePage() {
-  const [patientId, setPatientId] = useState("");
-  const [appointmentId, setAppointmentId] = useState("");
+  const [searchParams] = useSearchParams();
+  const [patientId, setPatientId] = useState(
+    searchParams.get("patientId") || "",
+  );
+  const [appointmentId, setAppointmentId] = useState(
+    searchParams.get("appointmentId") || "",
+  );
   const [insuranceProvider, setInsuranceProvider] = useState("");
   const [billingDate, setBillingDate] = useState("");
   const [items, setItems] = useState([{ ...emptyItem }]);

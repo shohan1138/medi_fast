@@ -49,6 +49,12 @@ const NAV_ITEMS = [
     label: "Prescriptions",
     roles: ["admin", "management", "doctor", "patient"],
   },
+  // NEW: Reports link for Admin and Management
+  {
+    to: "/reports",
+    label: "Reports",
+    roles: ["admin", "management"],
+  },
   {
     to: "/admin/users",
     label: "User Management",

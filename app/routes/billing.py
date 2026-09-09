@@ -81,13 +81,24 @@ def create_invoice(
 
     return invoice
 
-# NEW: List all invoices (Admin / Receptionist)
+# List all invoices (Admin / Receptionist)
 @router.get("/invoices", response_model=list[InvoiceResponse])
 def list_invoices(
     db: Session = Depends(get_db),
     current_user=Depends(require_role(["admin", "receptionist"])),
 ):
     return db.query(Invoice).order_by(Invoice.InvoiceId.desc()).all()
+
+
+# NEW: List invoices by Appointment ID (MUST be before /invoices/{invoice_id})
+@router.get("/invoices/appointment/{appointment_id}", response_model=list[InvoiceResponse])
+def get_invoices_by_appointment(
+    appointment_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_role(["admin", "receptionist"])),
+):
+    return db.query(Invoice).filter(Invoice.AppointmentId == appointment_id).all()
+
 
 @router.get(
     "/invoices/{invoice_id}",

@@ -40,6 +40,7 @@ import AllPrescriptionsPage from "./pages/prescriptions/AllPrescriptionsPage";
 import PrescriptionDetailPage from "./pages/prescriptions/PrescriptionDetailPage";
 import AppointmentPrescriptionPage from "./pages/prescriptions/AppointmentPrescriptionPage";
 
+import ReportsPage from "./pages/ReportsPage";
 function App() {
   return (
     <BrowserRouter>
@@ -369,6 +370,14 @@ function App() {
                       ]}
                     >
                       <AppointmentPrescriptionPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/reports"
+                  element={
+                    <ProtectedRoute allowedRoles={["admin", "management"]}>
+                      <ReportsPage />
                     </ProtectedRoute>
                   }
                 />
