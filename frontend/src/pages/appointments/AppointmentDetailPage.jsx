@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import {
   getAppointment,
   updateAppointmentStatus,
   rescheduleAppointment,
   cancelAppointment,
-} from "../api/appointment";
-import { getPatient } from "../api/patient";
-import { getDoctor } from "../api/doctor";
-import { getInvoicesByAppointment } from "../api/billing";
+} from "../../api/appointment";
+import { getPatient } from "../../api/patient";
+import { getDoctor } from "../../api/doctor";
+import { getInvoicesByAppointment } from "../../api/billing";
 import { useToast } from "../context/ToastContext";
 import { useConfirm } from "../context/ConfirmContext";
 import Spinner from "../components/Spinner";
